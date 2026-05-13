@@ -2,6 +2,8 @@
 
 ブラウザだけで動くドラム・シーケンサーです。パターン編集、プレビュー再生、WAV の書き出しまでクライアント側で完結します。
 
+**デモサイト:** [https://lil.la/drum-machine/](https://lil.la/drum-machine/)
+
 ![ドラムマシンの操作画面](ScreenShot.jpg)
 
 ## ライセンス
