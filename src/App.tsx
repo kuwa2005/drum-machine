@@ -44,6 +44,9 @@ import {
 const DEFAULT_SIG_ID = '4/4'
 const EMPTY_PRESET = PRESETS[0]
 
+const README_GUIDE_URL =
+  'https://github.com/kuwa2005/drum-machine#%E3%83%89%E3%83%A9%E3%83%A0%E3%83%9E%E3%82%B7%E3%83%B3drum-machine'
+
 /** 入力・セレクト共通 */
 const field =
   'rounded-xl border border-zinc-200/90 bg-white px-2.5 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25 dark:border-zinc-600 dark:bg-zinc-900/80 dark:text-white dark:focus:border-accent'
@@ -476,15 +479,16 @@ export default function App() {
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">ドラムマシン</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
+          <a
+            href={README_GUIDE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             className="dm-ui-btn dm-ui-btn--icon flex size-9 touch-manipulation items-center justify-center rounded-full border border-zinc-200/90 bg-white text-sm font-bold text-zinc-600 shadow-sm transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-            title="使い方ガイド（準備中）"
-            aria-label="使い方ガイド"
-            onClick={() => window.alert('使い方ガイドは準備中です。')}
+            title="使い方・README（GitHub）"
+            aria-label="使い方・README（GitHub）"
           >
             ?
-          </button>
+          </a>
           <button
             type="button"
             onClick={() => pickTheme('light')}
