@@ -4,6 +4,8 @@
 
 **デモサイト:** [https://lil.la/drum-machine/](https://lil.la/drum-machine/)
 
+**静的 HTML 版（配布物）:** [GitHub Releases](https://github.com/kuwa2005/drum-machine/releases) の最新アーカイブ（`.tar.gz`）に本番ビルドを同梱しています。展開後のファイルをサーバーの `/drum-machine/` 相当のパスに配置してください（詳細は [DEPLOY.txt](DEPLOY.txt)）。
+
 ![ドラムマシンの操作画面](ScreenShot.jpg)
 
 ## ライセンス
