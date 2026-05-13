@@ -1,0 +1,16 @@
+---
+description: ソース変更後は必ず Vite ビルドし drum-machine/ 成果物を更新する
+alwaysApply: true
+---
+
+# drum-machine ビルド（必須）
+
+このリポジトリ（`/home/ubuntu/00_develop/drum-machine`）で **`src/`・`index.html`・`vite.config.ts`・`server/` など成果物に影響するファイルを編集したら、必ず次を実行し、本番用フォルダを更新すること。**
+
+```bash
+cd /home/ubuntu/00_develop/drum-machine && npm run build
+```
+
+- 出力先は **`/home/ubuntu/00_develop/drum-machine/drum-machine/`**（`vite.config.ts` の `outDir`）。
+- 会話の最後にコード変更を入れた場合も、**コミット前・報告前に同コマンドを実行**し、`drum-machine/` 内の `index.html` と `assets/*` が最新になることを確認する。
+- ビルドエラーが出たら修正してから再実行する。

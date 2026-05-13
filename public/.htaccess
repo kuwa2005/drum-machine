@@ -1,0 +1,15 @@
+# Apache（レンタルサーバー等）: ビルド成果物フォルダ drum-machine のルートに置く用
+DirectoryIndex index.html
+
+<IfModule mod_mime.c>
+  AddType application/javascript .js
+  AddType text/css .css
+  AddType image/svg+xml .svg
+</IfModule>
+
+# 必要に応じてキャッシュ（更新が反映されない場合は短くするかコメントアウト）
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css)$">
+    Header set Cache-Control "public, max-age=300"
+  </FilesMatch>
+</IfModule>

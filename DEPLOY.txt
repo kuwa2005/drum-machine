@@ -1,0 +1,31 @@
+ドラムマシン — レンタルサーバーへの公開手順
+============================================
+
+■ 公開 URL（本プロジェクトの想定）
+  https://lil.la/drum-machine/
+
+■ 前提
+  - 本アプリはビルド後は「静的ファイル」のみで動きます（PHP 不要）。
+  - ローカルで `npm run build` を実行すると、プロジェクト直下に `drum-machine/`
+    フォルダができ、その中に成果物が出力されます（従来の dist ではありません）。
+  - 本番ビルドの base は `/drum-machine/` 固定です（vite.config.ts）。
+
+■ 方法 A（最も一般的）: Apache 等で静的配信
+  1. PC で `npm ci`（または `npm install`）後、`npm run build`。
+  2. サーバー上でドキュメントルートから見てパス `drum-machine/` に、ローカルの
+     `drum-machine/` フォルダの「中身」すべてをアップロードする。
+     例: public_html/drum-machine/index.html
+         public_html/drum-machine/assets/...
+  3. `public/.htaccess` がビルドで `drum-machine/.htaccess` に含まれます。
+  4. ブラウザで https://lil.la/drum-machine/ を開く（末尾スラッシュ推奨）。
+
+■ 方法 B: Node.js が使えるレンタル／VPS
+  1. 上記と同様に `npm run build` で `drum-machine/` を生成。
+  2. サーバーに drum-machine/ と server/static-server.mjs を配置。
+  3. リバースプロキシ等で URL パス `/drum-machine` をビルド成果にマッピングするか、
+     ドキュメントルート直下に drum-machine として置く構成に合わせてください。
+
+■ 補足
+  - `npm run dev` は従来どおり http://localhost:5173/ で開発できます（base は `/`）。
+  - 共有レンタルで Node の常駐が不可の場合は、方法 A のみで問題ありません。
+  - 以前 `dist/` を使っていた場合は、そのフォルダは削除して問題ありません。
