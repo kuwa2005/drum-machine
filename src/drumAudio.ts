@@ -174,6 +174,8 @@ function playSnare(ctx: BaseAudioContext, t0: number, out: AudioNode, variant: S
 
 function playHihat(ctx: BaseAudioContext, t0: number, out: AudioNode, variant: HihatVariant, vol: number): void {
   const v = Math.max(0, Math.min(1, vol))
+  /** ハイハットは帯域の関係で体感が小さくなりやすいため、他パーツよりゲインを上げる */
+  const hv = v * 1.85
   switch (variant) {
     case 'metronome_chime': {
       /* 「チーン」— メトロノーム的な高めの余韻 */
@@ -185,7 +187,7 @@ function playHihat(ctx: BaseAudioContext, t0: number, out: AudioNode, variant: H
       osc2.frequency.setValueAtTime(5280, t0)
       const g = ctx.createGain()
       g.gain.setValueAtTime(0.0001, t0)
-      g.gain.linearRampToValueAtTime(0.24 * v, t0 + 0.004)
+      g.gain.linearRampToValueAtTime(0.24 * hv, t0 + 0.004)
       g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.26)
       osc1.connect(g)
       osc2.connect(g)
@@ -194,18 +196,18 @@ function playHihat(ctx: BaseAudioContext, t0: number, out: AudioNode, variant: H
       osc2.start(t0)
       osc1.stop(t0 + 0.29)
       osc2.stop(t0 + 0.29)
-      playNoise(ctx, t0, 0.03, 0.08 * v, 'bandpass', 7200, out)
+      playNoise(ctx, t0, 0.03, 0.08 * hv, 'bandpass', 7200, out)
       break
     }
     case 'dark':
-      playNoise(ctx, t0, 0.065, 0.18 * v, 'bandpass', 5500, out)
+      playNoise(ctx, t0, 0.065, 0.18 * hv, 'bandpass', 5500, out)
       break
     case 'bright':
-      playNoise(ctx, t0, 0.04, 0.26 * v, 'bandpass', 12000, out)
+      playNoise(ctx, t0, 0.04, 0.26 * hv, 'bandpass', 12000, out)
       break
     case 'standard':
     default:
-      playNoise(ctx, t0, 0.05, 0.22 * v, 'bandpass', 8000, out)
+      playNoise(ctx, t0, 0.05, 0.22 * hv, 'bandpass', 8000, out)
       break
   }
 }
