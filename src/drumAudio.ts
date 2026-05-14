@@ -109,21 +109,26 @@ function playKick(ctx: BaseAudioContext, t0: number, out: AudioNode, variant: Ki
 function playSnare(ctx: BaseAudioContext, t0: number, out: AudioNode, variant: SnareVariant, vol: number): void {
   const v = Math.max(0, Math.min(1, vol))
   switch (variant) {
-    case 'metronome_click': {
-      /* 「カッ！」— 極短いメトロノーム系クリック */
-      const osc = ctx.createOscillator()
-      osc.type = 'sine'
-      osc.frequency.setValueAtTime(1650, t0)
-      osc.frequency.exponentialRampToValueAtTime(900, t0 + 0.012)
+    case 'metronome_chime': {
+      /* 「チーン（メトロ）」— スネア行で鳴らす高めの余韻 */
+      const osc1 = ctx.createOscillator()
+      const osc2 = ctx.createOscillator()
+      osc1.type = 'sine'
+      osc2.type = 'sine'
+      osc1.frequency.setValueAtTime(3520, t0)
+      osc2.frequency.setValueAtTime(5280, t0)
       const g = ctx.createGain()
       g.gain.setValueAtTime(0.0001, t0)
-      g.gain.linearRampToValueAtTime(0.52 * v, t0 + 0.0015)
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.028)
-      osc.connect(g)
+      g.gain.linearRampToValueAtTime(0.28 * v, t0 + 0.004)
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.26)
+      osc1.connect(g)
+      osc2.connect(g)
       g.connect(out)
-      osc.start(t0)
-      osc.stop(t0 + 0.035)
-      playNoise(ctx, t0, 0.012, 0.42 * v, 'bandpass', 2800, out)
+      osc1.start(t0)
+      osc2.start(t0)
+      osc1.stop(t0 + 0.29)
+      osc2.stop(t0 + 0.29)
+      playNoise(ctx, t0, 0.03, 0.1 * v, 'bandpass', 7200, out)
       break
     }
     case 'tight': {
@@ -177,26 +182,21 @@ function playHihat(ctx: BaseAudioContext, t0: number, out: AudioNode, variant: H
   /** ハイハットは帯域の関係で体感が小さくなりやすいため、他パーツよりゲインを上げる */
   const hv = v * 1.85
   switch (variant) {
-    case 'metronome_chime': {
-      /* 「チーン」— メトロノーム的な高めの余韻 */
-      const osc1 = ctx.createOscillator()
-      const osc2 = ctx.createOscillator()
-      osc1.type = 'sine'
-      osc2.type = 'sine'
-      osc1.frequency.setValueAtTime(3520, t0)
-      osc2.frequency.setValueAtTime(5280, t0)
+    case 'metronome_click': {
+      /* 「カッ！（メトロ）」— ハイハット行で鳴らす極短いクリック */
+      const osc = ctx.createOscillator()
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(1650, t0)
+      osc.frequency.exponentialRampToValueAtTime(900, t0 + 0.012)
       const g = ctx.createGain()
       g.gain.setValueAtTime(0.0001, t0)
-      g.gain.linearRampToValueAtTime(0.24 * hv, t0 + 0.004)
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.26)
-      osc1.connect(g)
-      osc2.connect(g)
+      g.gain.linearRampToValueAtTime(0.52 * hv, t0 + 0.0015)
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.028)
+      osc.connect(g)
       g.connect(out)
-      osc1.start(t0)
-      osc2.start(t0)
-      osc1.stop(t0 + 0.29)
-      osc2.stop(t0 + 0.29)
-      playNoise(ctx, t0, 0.03, 0.08 * hv, 'bandpass', 7200, out)
+      osc.start(t0)
+      osc.stop(t0 + 0.035)
+      playNoise(ctx, t0, 0.012, 0.42 * hv, 'bandpass', 2800, out)
       break
     }
     case 'dark':
