@@ -6,13 +6,13 @@ const COOKIE_MAX_AGE_SEC = 365 * 24 * 60 * 60
 /** バスドラム系の音色プリセット */
 export type KickVariant = 'standard' | 'deep' | 'punch'
 /** スネア系 */
-export type SnareVariant = 'standard' | 'tight' | 'ring'
+export type SnareVariant = 'standard' | 'tight' | 'ring' | 'metronome_click'
 /** ハイハット系 */
-export type HihatVariant = 'standard' | 'dark' | 'bright'
+export type HihatVariant = 'standard' | 'dark' | 'bright' | 'metronome_chime'
 
 export const KICK_VARIANTS: KickVariant[] = ['standard', 'deep', 'punch']
-export const SNARE_VARIANTS: SnareVariant[] = ['standard', 'tight', 'ring']
-export const HIHAT_VARIANTS: HihatVariant[] = ['standard', 'dark', 'bright']
+export const SNARE_VARIANTS: SnareVariant[] = ['standard', 'tight', 'ring', 'metronome_click']
+export const HIHAT_VARIANTS: HihatVariant[] = ['standard', 'dark', 'bright', 'metronome_chime']
 
 export function kickVariantLabel(v: KickVariant): string {
   switch (v) {
@@ -35,6 +35,8 @@ export function snareVariantLabel(v: SnareVariant): string {
       return 'タイト'
     case 'ring':
       return 'リング'
+    case 'metronome_click':
+      return 'カッ！（メトロ）'
     default:
       return v
   }
@@ -48,6 +50,8 @@ export function hihatVariantLabel(v: HihatVariant): string {
       return 'ダーク'
     case 'bright':
       return 'ブライト'
+    case 'metronome_chime':
+      return 'チーン（メトロ）'
     default:
       return v
   }
@@ -75,11 +79,11 @@ function isKickVariant(x: unknown): x is KickVariant {
 }
 
 function isSnareVariant(x: unknown): x is SnareVariant {
-  return x === 'standard' || x === 'tight' || x === 'ring'
+  return x === 'standard' || x === 'tight' || x === 'ring' || x === 'metronome_click'
 }
 
 function isHihatVariant(x: unknown): x is HihatVariant {
-  return x === 'standard' || x === 'dark' || x === 'bright'
+  return x === 'standard' || x === 'dark' || x === 'bright' || x === 'metronome_chime'
 }
 
 /** Cookie または不正値を既定値で正規化 */
