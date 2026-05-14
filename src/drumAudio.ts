@@ -179,24 +179,25 @@ function playSnare(ctx: BaseAudioContext, t0: number, out: AudioNode, variant: S
 
 function playHihat(ctx: BaseAudioContext, t0: number, out: AudioNode, variant: HihatVariant, vol: number): void {
   const v = Math.max(0, Math.min(1, vol))
-  /** ハイハットは帯域の関係で体感が小さくなりやすいため、他パーツよりゲインを上げる（スライダー1.0 で約2.35倍） */
-  const hv = v * 2.35
+  /** ハイハット帯域の体感音量補正（スライダー最大時の倍率。ノイズ系は 4.0 まで） */
+  const HI_HAT_LEVEL = 4.0
+  const hv = v * HI_HAT_LEVEL
   switch (variant) {
     case 'metronome_click': {
-      /* 「カッ！（メトロ）」— ハイハット行で鳴らす極短いクリック */
+      /* 「カッ！（メトロ）」— 合成が二系統のため係数だけやや抑え、全体倍率は同じ hv */
       const osc = ctx.createOscillator()
       osc.type = 'sine'
       osc.frequency.setValueAtTime(1650, t0)
       osc.frequency.exponentialRampToValueAtTime(900, t0 + 0.012)
       const g = ctx.createGain()
       g.gain.setValueAtTime(0.0001, t0)
-      g.gain.linearRampToValueAtTime(0.52 * hv, t0 + 0.0015)
+      g.gain.linearRampToValueAtTime(0.28 * hv, t0 + 0.0015)
       g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.028)
       osc.connect(g)
       g.connect(out)
       osc.start(t0)
       osc.stop(t0 + 0.035)
-      playNoise(ctx, t0, 0.012, 0.42 * hv, 'bandpass', 2800, out)
+      playNoise(ctx, t0, 0.012, 0.22 * hv, 'bandpass', 2800, out)
       break
     }
     case 'dark':
