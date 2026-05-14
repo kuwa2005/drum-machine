@@ -11,6 +11,15 @@ import {
 import { playDrumHit, setPreviewMasterLinearGain } from './drumAudio'
 import type { InstrumentId, Pattern } from './drumTypes'
 import { clonePattern, INSTRUMENTS, resizePattern } from './drumTypes'
+import {
+  coerceHihatVariant,
+  coerceKickVariant,
+  coerceSnareVariant,
+  instrumentVariantOptions,
+  readKitSoundFromCookie,
+  writeKitSoundCookie,
+  type KitSoundState,
+} from './kitSound'
 import { PRESETS } from './presets'
 import {
   beatStepWidth,
@@ -209,10 +218,13 @@ export default function App() {
   const [lookaheadMs, setLookaheadMs] = useState(25)
   const [repeatCount, setRepeatCount] = useState(4)
   const [exportingWav, setExportingWav] = useState(false)
+  const [kitSound, setKitSound] = useState<KitSoundState>(() => readKitSoundFromCookie())
+  const [kitSoundEdit, setKitSoundEdit] = useState<InstrumentId | null>(null)
 
   const patternRef = useRef(pattern)
   const measureCountRef = useRef(measureCount)
   const patternGridRef = useRef<HTMLDivElement>(null)
+  const kitSoundRef = useRef<KitSoundState>(kitSound)
   const audioRef = useRef<AudioContext | null>(null)
   const transportRafRef = useRef<number | null>(null)
   /** ループ先頭 0 を同一フレームで飛ばさないための 1 フレーム後追従 */
@@ -225,6 +237,19 @@ export default function App() {
   useEffect(() => {
     measureCountRef.current = measureCount
   }, [measureCount])
+
+  useEffect(() => {
+    kitSoundRef.current = kitSound
+  }, [kitSound])
+
+  useEffect(() => {
+    if (kitSoundEdit === null) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setKitSoundEdit(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [kitSoundEdit])
 
   useLayoutEffect(() => {
     applyThemeToDocument(theme)
@@ -251,6 +276,15 @@ export default function App() {
     }
     return audioRef.current
   }, [])
+
+  const previewKitOneShot = useCallback(
+    (inst: InstrumentId, k: KitSoundState) => {
+      const ctx = getCtx()
+      void ctx.resume()
+      playDrumHit(ctx, inst, ctx.currentTime + 0.06, k)
+    },
+    [getCtx],
+  )
 
   const stopPlayback = useCallback(() => {
     if (transportRafRef.current !== null) {
@@ -338,7 +372,7 @@ export default function App() {
         const idealT = anchorT + globalStepRef.current * stepDur
         const when = Math.max(now, idealT) + lookaheadMs / 1000
         for (const { id } of INSTRUMENTS) {
-          if (pat[id][s]) playDrumHit(ctx, id, when)
+          if (pat[id][s]) playDrumHit(ctx, id, when, kitSoundRef.current)
         }
         advanced = true
       }
@@ -406,6 +440,7 @@ export default function App() {
         repeatCount: loops,
         measureCount: measureCountRef.current,
         outputLinearGain: volumeLevelToLinearGain(volumeLevel),
+        kitSound: kitSoundRef.current,
       })
       const safeSig =
         sig.id === CUSTOM_SIG_ID ? `${sig.numerator}-${sig.denominator}` : sig.id.replace(/\//g, '-')
@@ -660,7 +695,10 @@ export default function App() {
           <button
             type="button"
             className={`dm-ui-btn dm-ui-btn--pill ${field} touch-manipulation px-3 py-2 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800`}
-            onClick={() => setSettingsOpen(true)}
+            onClick={() => {
+              setKitSoundEdit(null)
+              setSettingsOpen(true)
+            }}
           >
             設定
           </button>
@@ -718,13 +756,17 @@ export default function App() {
 
             {INSTRUMENTS.map((row) => (
               <Fragment key={row.id}>
-                <div
-                  className="flex min-h-0 min-w-0 items-center gap-1 truncate border-r border-zinc-200/90 py-0.5 pe-1 ps-0 text-[0.62rem] font-semibold leading-tight text-zinc-800 dark:border-zinc-600 dark:text-white"
-                  title={row.label}
+                <button
+                  type="button"
+                  className="dm-ui-btn flex min-h-0 min-w-0 items-center gap-1 truncate border-r border-zinc-200/90 py-0.5 pe-1 ps-0 text-left text-[0.62rem] font-semibold leading-tight text-zinc-800 transition hover:bg-zinc-100/80 dark:border-zinc-600 dark:text-white dark:hover:bg-zinc-800/60"
+                  title={`${row.label}の音色・音量`}
+                  aria-label={`${row.label}の音色と音量を編集`}
+                  aria-expanded={kitSoundEdit === row.id}
+                  onClick={() => setKitSoundEdit((v) => (v === row.id ? null : row.id))}
                 >
                   <RowInstrumentIcon id={row.id} />
                   <span className="min-w-0 truncate">{row.label}</span>
-                </div>
+                </button>
                 {Array.from({ length: gridSteps }, (_, s) => {
                   const pos = s % spm
                   const isMeasureStart = pos === 0
@@ -851,6 +893,133 @@ export default function App() {
           <span aria-hidden>→</span>
         </a>
       </aside>
+
+      {kitSoundEdit ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="dm-kit-title"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-zinc-950/45 backdrop-blur-sm dark:bg-black/55"
+            aria-label="閉じる"
+            onClick={() => setKitSoundEdit(null)}
+          />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-zinc-200/90 bg-white/95 p-5 shadow-2xl shadow-zinc-900/15 dark:border-zinc-700 dark:bg-zinc-900/95 dark:shadow-black/40">
+            <h2 id="dm-kit-title" className="mb-1 text-lg font-semibold text-zinc-900 dark:text-white">
+              {INSTRUMENTS.find((r) => r.id === kitSoundEdit)?.label}
+            </h2>
+            <p className="mb-4 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
+              音色・音量は Cookie（<code className="rounded bg-zinc-100 px-1 py-0.5 text-[0.7rem] dark:bg-zinc-800">dm-kit-sound</code>
+              ）に保存されます。
+            </p>
+            <fieldset className="mb-4">
+              <legend className="mb-2 text-sm font-medium text-zinc-800 dark:text-white">音色</legend>
+              <div className="flex flex-col gap-1.5" role="group" aria-label="音色プリセット">
+                {instrumentVariantOptions(kitSoundEdit).map((opt) => {
+                  const curVariant =
+                    kitSoundEdit === 'kick'
+                      ? kitSound.kick.variant
+                      : kitSoundEdit === 'snare'
+                        ? kitSound.snare.variant
+                        : kitSound.hihat.variant
+                  const selected = opt.id === curVariant
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      className={`dm-ui-btn dm-ui-btn--pill min-h-10 w-full touch-manipulation rounded-xl border px-3 py-2 text-left text-sm font-semibold transition ${
+                        selected
+                          ? 'border-accent bg-accent-muted text-zinc-900 shadow-sm ring-2 ring-accent ring-offset-2 ring-offset-white dark:text-white dark:ring-offset-zinc-900'
+                          : 'border-zinc-200/90 bg-white text-zinc-800 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800/80 dark:text-white dark:hover:bg-zinc-800'
+                      }`}
+                      aria-pressed={selected}
+                      onClick={() => {
+                        setKitSound((prev) => {
+                          let next: KitSoundState
+                          if (kitSoundEdit === 'kick') {
+                            next = { ...prev, kick: { ...prev.kick, variant: coerceKickVariant(opt.id) } }
+                          } else if (kitSoundEdit === 'snare') {
+                            next = { ...prev, snare: { ...prev.snare, variant: coerceSnareVariant(opt.id) } }
+                          } else {
+                            next = { ...prev, hihat: { ...prev.hihat, variant: coerceHihatVariant(opt.id) } }
+                          }
+                          writeKitSoundCookie(next)
+                          queueMicrotask(() => previewKitOneShot(kitSoundEdit, next))
+                          return next
+                        })
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </fieldset>
+            <label className="mb-4 flex flex-col gap-2 text-sm font-medium text-zinc-800 dark:text-white">
+              音量
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={Math.round(
+                  (kitSoundEdit === 'kick'
+                    ? kitSound.kick.volume
+                    : kitSoundEdit === 'snare'
+                      ? kitSound.snare.volume
+                      : kitSound.hihat.volume) * 100,
+                )}
+                className="w-full accent-cyan-600 dark:accent-cyan-400"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(
+                  (kitSoundEdit === 'kick'
+                    ? kitSound.kick.volume
+                    : kitSoundEdit === 'snare'
+                      ? kitSound.snare.volume
+                      : kitSound.hihat.volume) * 100,
+                )}
+                onChange={(e) => {
+                  const volume = Math.max(0, Math.min(1, Number(e.target.value) / 100))
+                  setKitSound((prev) => {
+                    let next: KitSoundState
+                    if (kitSoundEdit === 'kick') {
+                      next = { ...prev, kick: { ...prev.kick, volume } }
+                    } else if (kitSoundEdit === 'snare') {
+                      next = { ...prev, snare: { ...prev.snare, volume } }
+                    } else {
+                      next = { ...prev, hihat: { ...prev.hihat, volume } }
+                    }
+                    writeKitSoundCookie(next)
+                    queueMicrotask(() => previewKitOneShot(kitSoundEdit, next))
+                    return next
+                  })
+                }}
+              />
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className={`dm-ui-btn dm-ui-btn--pill ${field} flex-1 touch-manipulation py-2.5 text-center text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800`}
+                onClick={() => {
+                  previewKitOneShot(kitSoundEdit, kitSound)
+                }}
+              >
+                試聴
+              </button>
+              <button
+                type="button"
+                className={`dm-ui-btn dm-ui-btn--pill ${field} flex-1 touch-manipulation py-2.5 text-center text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800`}
+                onClick={() => setKitSoundEdit(null)}
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {settingsOpen ? (
         <div

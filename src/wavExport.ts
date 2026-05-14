@@ -1,4 +1,5 @@
 import { playDrumHit, setPreviewMasterLinearGain } from './drumAudio'
+import type { KitSoundState } from './kitSound'
 import type { Pattern } from './drumTypes'
 import { INSTRUMENTS } from './drumTypes'
 import type { TimeSignatureOption } from './timeSignature'
@@ -66,11 +67,13 @@ export type RenderWavParams = {
   measureCount: number
   /** オフライン合成のマスター線形ゲイン（プレビューと同じ音圧段階に合わせる） */
   outputLinearGain: number
+  /** 各パーツの音色・音量（プレビューと同じ設定で書き出す） */
+  kitSound: KitSoundState
 }
 
 /** 現在のパターンを指定回数繰り返した単一トラック WAV（16bit PCM mono）を生成 */
 export async function renderPatternToWavBlob(params: RenderWavParams): Promise<Blob> {
-  const { pattern, bpm, sig, repeatCount, measureCount, outputLinearGain } = params
+  const { pattern, bpm, sig, repeatCount, measureCount, outputLinearGain, kitSound } = params
   const totalSteps = totalStepsActive(sig, measureCount)
   const loops = Math.max(1, Math.floor(repeatCount))
   const stepDur = sixteenthNoteSeconds(bpm, sig)
@@ -91,7 +94,7 @@ export async function renderPatternToWavBlob(params: RenderWavParams): Promise<B
     const t = g * stepDur
     const step = g % totalSteps
     for (const { id } of INSTRUMENTS) {
-      if (pattern[id][step]) playDrumHit(ctx, id, t)
+      if (pattern[id][step]) playDrumHit(ctx, id, t, kitSound)
     }
   }
 

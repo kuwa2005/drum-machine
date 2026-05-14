@@ -1,4 +1,5 @@
 import type { InstrumentId } from './drumTypes'
+import type { HihatVariant, KickVariant, KitSoundState, SnareVariant } from './kitSound'
 import { readVolumeLevelFromCookie, volumeLevelToLinearGain } from './volumeLevel'
 
 const previewMasterByContext = new WeakMap<BaseAudioContext, GainNode>()
@@ -53,33 +54,97 @@ function playNoise(
   src.stop(when + duration + 0.05)
 }
 
-export function playDrumHit(ctx: BaseAudioContext, inst: InstrumentId, when: number): void {
-  const t0 = when
-  const out = getPreviewMaster(ctx)
-
-  switch (inst) {
-    case 'kick': {
+function playKick(ctx: BaseAudioContext, t0: number, out: AudioNode, variant: KickVariant, vol: number): void {
+  const v = Math.max(0, Math.min(1, vol))
+  switch (variant) {
+    case 'deep': {
+      const osc = ctx.createOscillator()
+      const g = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(95, t0)
+      osc.frequency.exponentialRampToValueAtTime(32, t0 + 0.2)
+      g.gain.setValueAtTime(1.0 * v, t0)
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.32)
+      osc.connect(g)
+      g.connect(out)
+      osc.start(t0)
+      osc.stop(t0 + 0.38)
+      playNoise(ctx, t0, 0.055, 0.12 * v, 'lowpass', 160, out)
+      break
+    }
+    case 'punch': {
+      const osc = ctx.createOscillator()
+      const g = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(180, t0)
+      osc.frequency.exponentialRampToValueAtTime(55, t0 + 0.07)
+      g.gain.setValueAtTime(0.78 * v, t0)
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.18)
+      osc.connect(g)
+      g.connect(out)
+      osc.start(t0)
+      osc.stop(t0 + 0.22)
+      playNoise(ctx, t0, 0.028, 0.22 * v, 'lowpass', 250, out)
+      break
+    }
+    case 'standard':
+    default: {
       const osc = ctx.createOscillator()
       const g = ctx.createGain()
       osc.type = 'sine'
       osc.frequency.setValueAtTime(150, t0)
       osc.frequency.exponentialRampToValueAtTime(45, t0 + 0.12)
-      g.gain.setValueAtTime(0.9, t0)
+      g.gain.setValueAtTime(0.9 * v, t0)
       g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.25)
       osc.connect(g)
       g.connect(out)
       osc.start(t0)
       osc.stop(t0 + 0.3)
-      playNoise(ctx, t0, 0.04, 0.15, 'lowpass', 200, out)
+      playNoise(ctx, t0, 0.04, 0.15 * v, 'lowpass', 200, out)
       break
     }
-    case 'snare': {
-      playNoise(ctx, t0, 0.18, 0.55, 'highpass', 1800, out)
+  }
+}
+
+function playSnare(ctx: BaseAudioContext, t0: number, out: AudioNode, variant: SnareVariant, vol: number): void {
+  const v = Math.max(0, Math.min(1, vol))
+  switch (variant) {
+    case 'tight': {
+      playNoise(ctx, t0, 0.12, 0.48 * v, 'highpass', 2500, out)
+      const osc = ctx.createOscillator()
+      const g = ctx.createGain()
+      osc.type = 'triangle'
+      osc.frequency.setValueAtTime(220, t0)
+      g.gain.setValueAtTime(0.3 * v, t0)
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.055)
+      osc.connect(g)
+      g.connect(out)
+      osc.start(t0)
+      osc.stop(t0 + 0.08)
+      break
+    }
+    case 'ring': {
+      playNoise(ctx, t0, 0.25, 0.52 * v, 'highpass', 1400, out)
+      const osc = ctx.createOscillator()
+      const g = ctx.createGain()
+      osc.type = 'triangle'
+      osc.frequency.setValueAtTime(180, t0)
+      g.gain.setValueAtTime(0.28 * v, t0)
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.14)
+      osc.connect(g)
+      g.connect(out)
+      osc.start(t0)
+      osc.stop(t0 + 0.16)
+      break
+    }
+    case 'standard':
+    default: {
+      playNoise(ctx, t0, 0.18, 0.55 * v, 'highpass', 1800, out)
       const osc = ctx.createOscillator()
       const g = ctx.createGain()
       osc.type = 'triangle'
       osc.frequency.setValueAtTime(200, t0)
-      g.gain.setValueAtTime(0.35, t0)
+      g.gain.setValueAtTime(0.35 * v, t0)
       g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.08)
       osc.connect(g)
       g.connect(out)
@@ -87,8 +152,38 @@ export function playDrumHit(ctx: BaseAudioContext, inst: InstrumentId, when: num
       osc.stop(t0 + 0.1)
       break
     }
+  }
+}
+
+function playHihat(ctx: BaseAudioContext, t0: number, out: AudioNode, variant: HihatVariant, vol: number): void {
+  const v = Math.max(0, Math.min(1, vol))
+  switch (variant) {
+    case 'dark':
+      playNoise(ctx, t0, 0.065, 0.18 * v, 'bandpass', 5500, out)
+      break
+    case 'bright':
+      playNoise(ctx, t0, 0.04, 0.26 * v, 'bandpass', 12000, out)
+      break
+    case 'standard':
+    default:
+      playNoise(ctx, t0, 0.05, 0.22 * v, 'bandpass', 8000, out)
+      break
+  }
+}
+
+export function playDrumHit(ctx: BaseAudioContext, inst: InstrumentId, when: number, kit: KitSoundState): void {
+  const t0 = when
+  const out = getPreviewMaster(ctx)
+
+  switch (inst) {
+    case 'kick':
+      playKick(ctx, t0, out, kit.kick.variant, kit.kick.volume)
+      break
+    case 'snare':
+      playSnare(ctx, t0, out, kit.snare.variant, kit.snare.volume)
+      break
     case 'hihat':
-      playNoise(ctx, t0, 0.05, 0.22, 'bandpass', 8000, out)
+      playHihat(ctx, t0, out, kit.hihat.variant, kit.hihat.volume)
       break
     default:
       break

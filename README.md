@@ -48,6 +48,7 @@ npm run dev
 
 - 表示テーマ: `dm-theme`
 - 音圧: `dm-volume`
+- 各パーツの音色・音量: `dm-kit-sound`（JSON）
 
 ## 技術スタック
 
