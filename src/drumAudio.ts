@@ -179,8 +179,8 @@ function playSnare(ctx: BaseAudioContext, t0: number, out: AudioNode, variant: S
 
 function playHihat(ctx: BaseAudioContext, t0: number, out: AudioNode, variant: HihatVariant, vol: number): void {
   const v = Math.max(0, Math.min(1, vol))
-  /** ハイハットは帯域の関係で体感が小さくなりやすいため、他パーツよりゲインを上げる */
-  const hv = v * 1.85
+  /** ハイハットは帯域の関係で体感が小さくなりやすいため、他パーツよりゲインを上げる（スライダー1.0 で約2.35倍） */
+  const hv = v * 2.35
   switch (variant) {
     case 'metronome_click': {
       /* 「カッ！（メトロ）」— ハイハット行で鳴らす極短いクリック */
